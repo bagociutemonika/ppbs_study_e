@@ -1,0 +1,5 @@
+default:
+  source_csv: "C:/PPBS/source/Study_E_500.csv"
+  source_sha256: ""        # filled in at Step 5.2
+  min_cell_n: 10           # suppress any public table cell below this
+  processed_file: "data/processed/study_e_processed.rds"

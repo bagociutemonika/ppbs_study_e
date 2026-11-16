@@ -40,11 +40,25 @@ vignettes/*.pdf
 .Renviron
 .env
 
-# pkgdown site
-docs/
 
 # translation temp files
 po/*~
 
 # RStudio Connect folder
 rsconnect/
+.Rproj.user
+
+
+# PPBS data safety 
+# never commit the source extract or any raw CSV
+*.csv
+!spec/*.csv
+!checks/*.csv
+# caches can contain full data frames
+*_cache/
+_freeze/
+.quarto/
+# the built site is deployed separately after inspection
+site/_site/
+# local secrets / paths
+.Renviron
