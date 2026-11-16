@@ -1,0 +1,46 @@
+---
+title: "Study E · reproducible construct reports"
+subtitle: "PPBS practical exercise · Monika Bagočiūtė"
+---
+
+::: {.callout-note}
+**Progress update (Tuesday 17 November, 13:00).** This site is work in progress. The status of each part is listed below. The final version follows by Thursday 19 November, 09:00.
+:::
+
+## How I would work at PPBS
+
+*TODO (Monika), in my own words. Planned structure:*
+
+1. **Why this work interests me**: ...
+2. **What I would bring**: ...
+3. **One concrete improvement, already started here: a machine-readable item specification.**
+   - *Preserve:* ...
+   - *Change:* ...
+   - *Verify:* ...
+   - *First week:* ...
+4. **Decisions I would make myself, and decisions I would bring to a research lead.** For example, I made the anomie item-direction decision with evidence, but I would still confirm it with PPBS.
+5. **Tools I can use immediately:** R, Quarto, Git/GitHub, renv, psych, lme4, ggplot2, ...
+
+## Status
+
+| Part | Status |
+|---|---|
+| Data preparation (item spec, recoding, scores, checks) | Done |
+| Report 1 · Right-wing authoritarianism | Draft |
+| Report 2 · Anomie | Draft |
+| Report 3 · Relative deprivation | Draft |
+| Report 4 · Rehabilitation | Draft |
+| Report 5 · Causal attribution | Draft |
+| Report 6 · Vote intention | In progress |
+| Decision log, AI disclosure, handover and deletion plan | In progress |
+
+## Key data decisions so far
+
+- **Source file unchanged.** It is read from outside the repository; all recodes are made in code and the original values are kept next to the recoded ones.
+- **Item rules in one table** (`spec/item_spec.csv`): wording, waves, range, reversal and special codes. The scripts read the rules from this table.
+- **Anomie items 4-5 are already reverse-scored in the extract.** Reversing them as the guide suggests produced negative inter-item correlations, so they are not reversed again (to confirm with PPBS).
+- **Relative deprivation** is a single item, reversed so that higher means more deprived; validated against household income (ρ ≈ -.63).
+- **Rehabilitation:** "not able to answer" is coded 97 in waves 4-5 but stored as blank in wave 3; both are treated as missing and reported.
+- **Causal attribution:** two separate scores (societal, individual) instead of one, based on factor analysis; items 2 and 3 excluded.
+- **Sample:** all 500 respondents took part in all five waves; results describe this panel, not the population.
+- **Public site:** aggregate results only; groups with fewer than 10 respondents are suppressed; an automated check scans the built site for data files and respondent IDs before publishing.

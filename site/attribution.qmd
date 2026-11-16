@@ -1,0 +1,51 @@
+---
+title: "Report 5 · Causal attribution of crime"
+---
+
+```{r setup}
+#| include: false
+source("../R/report_functions.R")
+construct <- "attribution"
+lo <- 1; hi <- 7
+scores <- list(
+  attr_societal   = paste0("attribution_", c(1, 4, 5, 6), "_r"),
+  attr_individual = paste0("attribution_", 7:9, "_r"))
+primary <- c("attr_societal", "attr_individual")
+all9 <- paste0("attribution_", 1:9, "_r")
+```
+
+{{< include _construct_template.qmd >}}
+
+## Construct-specific checks
+
+**Why two scores, not one.** The nine items (Carroll et al., 1987) include statements that blame circumstances (poverty, flaws in society, situations, family problems) and statements that blame the person (laziness, deliberate choice, disregard for others). Averaging all nine would mix opposite explanations. A direction check found 9-12 negative inter-item correlations in every wave.
+
+**Structure.** An exploratory factor analysis on wave 1 gave two factors that are almost uncorrelated, so respondents can endorse both kinds of explanation. Items 2 (drugs) and 3 (learning from criminals) were excluded because they cross-load or fit neither explanation clearly. The structure was derived in wave 1 and is checked in waves 2-5 here:
+
+```{r attr-efa}
+kable_out(do.call(rbind, lapply(1:5, function(w) efa_loadings(d, all9, 2, w)$fit)))
+```
+
+**Loadings by wave** (two factors; loadings below .30 hidden; factor order can differ between waves):
+
+```{r attr-load, results='asis'}
+for (w in 1:5) {
+  cat("\n\n**Wave", w, "**\n\n")
+  cat(kable_out(efa_loadings(d, all9, 2, w)$table), sep = "\n")
+}
+```
+
+**Correlation between the two scores by wave:**
+
+```{r attr-r}
+kable_out(do.call(rbind, lapply(1:5, function(w) {
+  dw <- d[d$wave == w, ]
+  cor_row(dw$attr_societal, dw$attr_individual, paste("Wave", w))
+})))
+```
+
+## Interpretation and limits
+
+*TODO (Monika): 3-5 sentences, written after reading the results above.*
+
+- Robustness still to add: individual score including item 2.

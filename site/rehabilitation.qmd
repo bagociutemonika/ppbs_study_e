@@ -1,0 +1,26 @@
+---
+title: "Report 4 · Support for rehabilitation"
+---
+
+```{r setup}
+#| include: false
+source("../R/report_functions.R")
+construct <- "rehabilitation"
+lo <- 1; hi <- 7
+scores <- list(rehabilitation = paste0("resoc_", 1:3, "_r"))
+primary <- "rehabilitation"
+```
+
+{{< include _construct_template.qmd >}}
+
+## Construct-specific checks
+
+**Waves.** The three items were asked only in waves 3, 4 and 5. Longitudinal comparisons cover these three waves.
+
+**"Not able to answer".** In waves 4 and 5 this answer is stored as code 97. In wave 3 no 97 codes occur; instead a similar number of answers is blank (for example item 2: 55 blank in wave 3 vs. 45 and 32 coded 97 in waves 4 and 5). The pipeline treats both as "not able to answer" and sets them to missing. Because the share of such answers is itself informative (people who feel unable to judge rehabilitation), it is reported in the data-quality table above.
+
+**Measurement limit.** These are three study-specific items without prior validation; three items give limited coverage of the construct.
+
+## Interpretation and limits
+
+*TODO (Monika): 3-5 sentences, written after reading the results above.*

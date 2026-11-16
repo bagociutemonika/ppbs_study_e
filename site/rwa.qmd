@@ -1,0 +1,42 @@
+---
+title: "Report 1 · Right-wing authoritarianism"
+---
+
+```{r setup}
+#| include: false
+source("../R/report_functions.R")
+construct <- "rwa"
+lo <- 1; hi <- 7
+scores <- list(
+  rwa                 = paste0("rwa_", 1:9, "_r"),
+  rwa_aggression      = paste0("rwa_", 1:3, "_r"),
+  rwa_submission      = paste0("rwa_", 4:6, "_r"),
+  rwa_conventionalism = paste0("rwa_", 7:9, "_r"))
+primary <- "rwa"
+```
+
+{{< include _construct_template.qmd >}}
+
+## Construct-specific checks
+
+The KSA-3 scale is designed with three facets (aggression, submission, conventionalism; three items each). The table compares a one-factor and a three-factor solution in every wave.
+
+```{r rwa-efa}
+fits <- do.call(rbind, lapply(1:5, function(w) rbind(
+  efa_loadings(d, scores$rwa, 1, w)$fit,
+  efa_loadings(d, scores$rwa, 3, w)$fit)))
+kable_out(fits)
+```
+
+**Wave 1 loadings, three factors** (loadings below .30 hidden):
+
+```{r rwa-load}
+kable_out(efa_loadings(d, scores$rwa, 3, 1)$table)
+```
+
+## Interpretation and limits
+
+*TODO (Monika): 3-5 sentences, written after reading the results above.*
+
+- All nine items were asked with identical wording and response scale in waves 1-5, so mean-level and rank-order comparisons across waves are supported.
+- No items are reverse-worded; the direction check found only positive inter-item correlations in every wave.

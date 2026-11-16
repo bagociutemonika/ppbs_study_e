@@ -1,0 +1,39 @@
+---
+title: "Report 3 · Relative deprivation"
+---
+
+```{r setup}
+#| include: false
+source("../R/report_functions.R")
+construct <- "relative_deprivation"
+lo <- 1; hi <- 7
+scores <- list(rel_deprivation = "deprivation_r")
+primary <- "rel_deprivation"
+```
+
+{{< include _construct_template.qmd >}}
+
+## Construct-specific checks
+
+**Measurement limit: a single item.** Personal relative deprivation is measured with one question ("How would you rate your own financial situation compared to other Germans?"). Internal consistency cannot be estimated. The raw item runs from 1 = much worse to 7 = much better off; the pipeline reverses it so that higher values mean *more* deprivation.
+
+**Convergent validity.** If the item and its reversal are correct, deprivation should correlate negatively with household income.
+
+```{r dep-income}
+kable_out(do.call(rbind, lapply(1:5, function(w) {
+  dw <- d[d$wave == w, ]
+  ok <- !is.na(dw$rel_deprivation) & !is.na(income_num(dw$income))
+  data.frame(Wave = w, n = sum(ok),
+             `Spearman rho with income` = r2(cor(dw$rel_deprivation[ok],
+                                                 income_num(dw$income)[ok], method = "spearman")),
+             check.names = FALSE)
+})))
+```
+
+**Test-retest stability** across waves serves as the reliability evidence for a single item (see the rank-order stability table above).
+
+**Not included:** `deprivation_offender` asks how the government treats offenders compared with the general population. It is a different construct and is not part of this score.
+
+## Interpretation and limits
+
+*TODO (Monika): 3-5 sentences, written after reading the results above.*

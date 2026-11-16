@@ -20,7 +20,7 @@ spec <- read.csv("spec/item_spec.csv", stringsAsFactors = FALSE)
 # All columns read as text, so nothing is converted silently.
 # Blank cells and literal "NA" both become R NA (as in the item guide).
 src <- read.csv(src_path, colClasses = "character", na.strings = c("", "NA"),
-                check.names = FALSE, fileEncoding = "UTF-8")
+                check.names = FALSE, encoding = "UTF-8")
 
 # Key check: stop immediately if respondent IDs are not unique
 stopifnot(!anyDuplicated(src$exercise_id))
