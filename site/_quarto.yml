@@ -18,6 +18,8 @@ website:
         text: "4 · Rehabilitation"
       - href: attribution.qmd
         text: "5 · Causal attribution"
+      - href: vote.qmd
+        text: "6 · Vote intention"
 
 format:
   html:

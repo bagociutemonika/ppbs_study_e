@@ -1,0 +1,94 @@
+---
+title: "Report 6 · Vote intention"
+---
+
+```{r setup}
+#| include: false
+source("../R/report_functions.R")
+source("../R/vote_functions.R")
+d <- load_processed()
+preds  <- c("rwa", "anomie", "rel_deprivation", "rehabilitation", "attr_societal", "attr_individual")
+labels <- c(rwa = "RWA", anomie = "Anomie", rel_deprivation = "Relative deprivation",
+            rehabilitation = "Support for rehabilitation",
+            attr_societal = "Societal attribution", attr_individual = "Individual attribution")
+```
+
+## What is measured
+
+The "Sunday question": *Which party would you vote for if the election for the German Bundestag were next Sunday?* This is **stated intention**, not observed voting. The extract stores the answers as German text labels; the pipeline maps them to the categories below. All `r length(unique(d$exercise_id))` respondents took part in all five waves; results are unweighted and are **not** estimates of German election results.
+
+**Change in the answer options.** "I would not vote" and "I don't know yet" were offered only from wave 2. In wave 1, people in these situations had to skip the question or choose a party. This explains the larger number of missing answers in wave 1, and it means wave 1 is not directly comparable with later waves. Switching analyses therefore use waves 2-5.
+
+## Categories and frequencies by wave
+
+Cells with fewer than `r MIN_CELL` respondents are shown as "<`r MIN_CELL`".
+
+```{r freq}
+kable_out(vote_freq_table(d))
+```
+
+```{r shares, fig.height=3.5, fig.width=7}
+vote_share_plot(d)
+```
+
+**Not identifiable in this extract:** "Other party" rises in later waves. This may reflect new parties (for example BSW, founded in 2024), but the extract contains no open-text answers, so this cannot be checked.
+
+## Switching between waves
+
+For the switching tables, parties are grouped to avoid very small cells: FDP, Die Linke and "other party" form **Other parties**; "would not vote" and "don't know yet" form **Undecided / non-voter**. Respondents with no answer in either wave are left out of that comparison.
+
+**Summary of switching patterns** (adjacent waves, same respondents):
+
+```{r switch-summary}
+kable_out(switching_summary(d, list(c(2, 3), c(3, 4), c(4, 5))))
+```
+
+**Full transition tables** (rows = earlier wave, columns = later wave):
+
+```{r transitions, results='asis'}
+for (p in list(c(2, 3), c(3, 4), c(4, 5))) {
+  cat("\n\n**Wave", p[1], "to wave", p[2], "**\n\n")
+  cat(kable_out(transition_table(d, p[1], p[2])), sep = "\n")
+}
+```
+
+## Vote intention and the assigned constructs
+
+**Design.** To avoid using a later measure to explain an earlier answer, the construct scores come from an **earlier wave** than the vote: scores in wave 4 predict vote intention in wave 5. The same model is repeated with wave 3 scores and wave 4 vote as a replication. Support for rehabilitation exists only from wave 3, which is why wave 3 is the earliest possible starting point.
+
+**Model.** Multinomial logistic regression with the six grouped vote categories as outcome and all six construct scores (standardised within wave) as predictors. To make the results readable, the table shows how the **average predicted probability** of each category changes when one score moves from 1 SD below to 1 SD above the mean, holding the other scores at their observed values. 95% intervals from 300 bootstrap samples. These are associations in a non-random panel, not causal effects.
+
+```{r model-main}
+#| cache: false
+eff45 <- vote_effects(d, 4, 5, preds, labels)
+eff34 <- vote_effects(d, 3, 4, preds, labels)
+```
+
+### Main model: scores in wave 4, vote intention in wave 5
+
+Analytic n = `r eff45$n`. Respondents per category: `r paste(names(eff45$counts), eff45$counts, sep = " ", collapse = "; ")`.
+
+```{r plot45, fig.height=5.5, fig.width=9}
+effects_plot(eff45)
+```
+
+```{r tab45}
+kable_out(effects_table(eff45))
+```
+
+### Replication: scores in wave 3, vote intention in wave 4
+
+Analytic n = `r eff34$n`.
+
+```{r plot34, fig.height=5.5, fig.width=9}
+effects_plot(eff34)
+```
+
+## Interpretation and limits
+
+*TODO (Monika): 3-5 sentences, written after reading the results above. Which constructs are associated with which party choice, does the replication agree, and what can and cannot be concluded?*
+
+- Stated intention, not behaviour; an unweighted panel of people who stayed for five waves.
+- Wave 1 has different answer options and is used only descriptively.
+- Party groups combine parties with different profiles (for example FDP and Die Linke) to keep cells large enough; this hides differences within the group.
+- Predictors are measured one wave earlier, but this does not establish causality: stable traits and earlier vote intention may explain both.

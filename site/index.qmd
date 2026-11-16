@@ -31,7 +31,7 @@ subtitle: "PPBS practical exercise · Monika Bagočiūtė"
 | Report 3 · Relative deprivation | Draft |
 | Report 4 · Rehabilitation | Draft |
 | Report 5 · Causal attribution | Draft |
-| Report 6 · Vote intention | In progress |
+| Report 6 · Vote intention | Draft |
 | Decision log, AI disclosure, handover and deletion plan | In progress |
 
 ## Key data decisions so far
