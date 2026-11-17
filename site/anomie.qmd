@@ -2,42 +2,41 @@
 title: "Report 2 · Anomie"
 ---
 
-```{r setup}
+```{r}
 #| include: false
-source("../R/report_functions.R")
-construct <- "anomie"
+source("../R/report_setup.R")
+score      <- "anomie"
+item_names <- paste0("anomia_", 1:6)
+subscales  <- list(anomie_fabric     = paste0("anomia_", 1:3),
+                   anomie_leadership = paste0("anomia_", 4:6))
 lo <- 1; hi <- 7
-scores <- list(
-  anomie            = paste0("anomia_", 1:6, "_r"),
-  anomie_fabric     = paste0("anomia_", 1:3, "_r"),
-  anomie_leadership = paste0("anomia_", 4:6, "_r"))
-primary <- "anomie"
 ```
 
 {{< include _construct_template.qmd >}}
 
 ## Construct-specific checks
 
-**Item direction.** The item guide lists items 4 and 5 as inversely coded. Reversing them in the pipeline produced *negative* correlations with items 1-3 and 6 (for example r = -.60 with item 6 in wave 1), which contradicts the item wording. The extract therefore already stores items 4-5 reverse-scored, and the pipeline does not reverse them again. This is recorded in the decision log as an issue to confirm with PPBS.
+**Item direction.** The item guide lists items 4 and 5 as inversely coded. Reversing them produced *negative* correlations with items 1-3 and 6 (for example r = -.60 with item 6 in wave 1), which contradicts the wording. The extract therefore already stores items 4-5 reverse-scored, and the pipeline does not reverse them again. This is in the decision log as a question for PPBS.
 
-**One or two dimensions?** Teymoori et al. (2016) distinguish a breakdown of the social fabric (items 1-3) from a breakdown of leadership (items 4-6).
+**One or two dimensions?** Teymoori et al. (2016) separate a breakdown of the social fabric (items 1-3) from a breakdown of leadership (items 4-6).
 
-```{r anomie-efa}
-fits <- do.call(rbind, lapply(1:5, function(w) rbind(
-  efa_loadings(d, scores$anomie, 1, w)$fit,
-  efa_loadings(d, scores$anomie, 2, w)$fit)))
-kable_out(fits)
+```{r}
+fits <- NULL
+for (w in 1:5) {
+  for (k in 1:2) fits <- rbind(fits, cbind(Wave = w, efa(d[d$wave == w, ], item_names, k)$fit))
+}
+show_table(fits, digits = 3)
 ```
 
 **Wave 1 loadings, two factors:**
 
-```{r anomie-load}
-kable_out(efa_loadings(d, scores$anomie, 2, 1)$table)
+```{r}
+show_table(efa(d[d$wave == 1, ], item_names, 2)$loadings)
 ```
 
 ## Interpretation and limits
 
 *TODO (Monika): 3-5 sentences, written after reading the results above.*
 
-- Wording and response scale are identical in all five waves.
-- The total score combines two related but distinguishable facets; subscale reliabilities are shown above.
+- Wording and answer scale are the same in all five waves.
+- The total score combines two related but distinct facets; their reliabilities are shown above.

@@ -1,27 +1,39 @@
-# =====================================================================
+
 # check_public_site.R
-# Scans the BUILT public site (site/_site) before it is deployed:
-#  1. no data-like files (csv, rds, RData, xlsx, ...)
-#  2. no respondent IDs anywhere in the HTML/JS/JSON files
-# Stops with an error if anything is found.
-# =====================================================================
-site  <- "site/_site"
-files <- list.files(site, recursive = TRUE, full.names = TRUE)
-if (length(files) == 0) stop("No built site found in ", site)
+# Checks the built website (site/_site) before it is published.
+# Stops with an error if it finds anything that looks like respondent data:
+#   1. data files (csv, rds, xlsx, ...)
+#   2. the ID column name "exercise_id"
+#   3. respondent IDs (only IDs of 5+ characters can be searched reliably)
+#   4. very long tables (aggregate tables are short; a respondent list is not)
 
-bad <- grepl("\\.(csv|rds|rdata|rda|xlsx|xls|sav|dta|parquet|feather)$", files, ignore.case = TRUE)
-if (any(bad)) stop("Data-like files in the public site: ", paste(files[bad], collapse = ", "))
+site_files <- list.files("site/_site", recursive = TRUE, full.names = TRUE)
+if (length(site_files) == 0) stop("No website found in site/_site - run run.R first.")
 
-d   <- readRDS("data/processed/study_e_processed.rds")
-ids <- unique(as.character(d$exercise_id))
-long_ids <- ids[nchar(ids) >= 5]   # very short IDs would match ordinary numbers
-text_files <- files[grepl("\\.(html|js|json|txt|md)$", files, ignore.case = TRUE)]
-txt <- paste(unlist(lapply(text_files, readLines, warn = FALSE, encoding = "UTF-8")), collapse = "\n")
+# 1. data files
+data_files <- grep("\\.(csv|rds|rdata|rda|xlsx|xls|sav|dta)$", site_files,
+                   ignore.case = TRUE, value = TRUE)
+if (length(data_files) > 0) stop("Data files in the website: ", paste(data_files, collapse = ", "))
 
-hits <- long_ids[vapply(long_ids, function(i) grepl(i, txt, fixed = TRUE), logical(1))]
-if (length(hits)) stop(length(hits), " respondent ID(s) found in the public site. Do not deploy.")
+text_files <- grep("\\.(html|js|json)$", site_files, value = TRUE)
+site_text  <- paste(unlist(lapply(text_files, readLines, warn = FALSE)), collapse = "\n")
 
-cat("Public-site check passed:", length(files), "files scanned; no data files;",
-    length(long_ids), "of", length(ids), "IDs long enough to search, none found.\n")
-if (length(long_ids) < length(ids))
-  cat("Note:", length(ids) - length(long_ids), "IDs are too short to search reliably; check the site manually.\n")
+# 2. the ID column name
+if (grepl("exercise_id", site_text, fixed = TRUE)) stop("'exercise_id' appears in the website. Do not publish.")
+
+# 3. respondent IDs
+ids   <- unique(as.character(readRDS("data/processed/study_e_processed.rds")$exercise_id))
+long  <- ids[nchar(ids) >= 5]
+found <- long[vapply(long, function(id) grepl(id, site_text, fixed = TRUE), logical(1))]
+if (length(found) > 0) stop(length(found), " respondent ID(s) found in the website. Do not publish.")
+
+# 4. table length
+tables   <- regmatches(site_text, gregexpr("(?s)<table.*?</table>", site_text, perl = TRUE))[[1]]
+rows     <- lengths(regmatches(tables, gregexpr("<tr", tables)))
+max_rows <- if (length(rows) > 0) max(rows) else 0
+if (max_rows > 100) stop("A table in the website has ", max_rows, " rows - check that it is aggregate.")
+
+cat("Public-site check passed:", length(site_files), "files; no data files;",
+    "no 'exercise_id'; longest table", max_rows, "rows;",
+    length(long), "of", length(ids), "IDs long enough to search, none found.\n")
+

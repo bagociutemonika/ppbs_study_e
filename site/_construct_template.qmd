@@ -1,135 +1,272 @@
-```{r template-setup}
+```{r}
 #| include: false
-d    <- load_processed()
-spec <- load_spec()
-d$age_group <- age_group(d$age)
-cs_wave <- min(waves_present(d, primary[1]))   # cross-sectional wave = first wave measured
-all_scores <- c("rwa", "anomie", "rel_deprivation", "rehabilitation",
-                "attr_societal", "attr_individual")
-nice <- c(rwa = "RWA", anomie = "Anomie", rel_deprivation = "Relative deprivation",
-          rehabilitation = "Support for rehabilitation",
-          attr_societal = "Societal attribution", attr_individual = "Individual attribution")
+# This template is shared by the construct reports. Each report page sets:
+#   score, item_names, subscales, lo, hi   (see the top of rwa.qmd, for example)
+label   <- score_names[[score]]
+waves   <- sort(unique(d$wave[!is.na(d[[score]])]))   # waves in which the score exists
+cs_wave <- min(waves)                                  # first wave = cross-sectional analysis
+dcs     <- d[d$wave == cs_wave, ]
+items_r <- paste0(item_names, "_r")
 ```
 
-## Study and sample
+## Study characteristics
 
-Study E is a five-wave online panel of `r length(unique(d$exercise_id))` pseudonymous respondents in Germany. All respondents in this extract took part in all five waves, so the sample is **a selected group of panel stayers**, not a probability sample of the population. Results are unweighted and describe this sample only.
+Study E is a five-wave online panel of `r length(unique(d$exercise_id))` pseudonymous respondents in Germany. All respondents in this extract took part in all five waves, so the sample is a **selected group of panel stayers**, not a probability sample. Results are unweighted and describe this sample only.
 
-## Measure
+**Items** (wording and rules from `spec/item_spec.csv`):
 
-```{r measure-table}
-kable_out(item_table(spec, construct))
+```{r}
+item_table <- spec[match(item_names, ifelse(is.na(spec$item_no), spec$item_stem,
+                                            paste0(spec$item_stem, "_", spec$item_no))), ]
+show_table(data.frame(Item = item_names, Wording = item_table$wording,
+                      Waves = gsub(";", ", ", item_table$waves),
+                      Range = paste0(item_table$scale_min, "-", item_table$scale_max),
+                      `Reversed in pipeline` = ifelse(item_table$reverse == 1, "yes", "no"),
+                      `Special codes` = item_table$documented_missing_codes,
+                      check.names = FALSE))
 ```
 
-**Scoring.** Each score is the mean of its recoded items (range `r lo`–`r hi`, higher = more of the construct). A score is computed only when at least two thirds of its items were answered. Special codes (for example 97 "not able to answer", 99 "not specified") were set to missing before scoring.
+**Score.** The mean of the recoded items (range `r lo`-`r hi`, higher = more of the construct), computed when at least two thirds of the items were answered. Special codes (for example 97 "not able to answer") count as missing.
 
 ## Data quality
 
-**Analytic N** (respondents with a valid score):
-
-```{r n-table}
-kable_out(n_table(d, names(scores)))
-```
-
-**Item-level missingness and special codes:**
-
-```{r item-quality}
-kable_out(item_quality(d, unique(unlist(scores)), lo, hi))
-```
-
-## Distributions
-
-```{r dist, results='asis', fig.height=2.6, fig.width=9}
-for (s in primary) {
-  cat("\n\n###", nice[s], "\n\n")
-  print(dist_plot(d, s, nice[s], lo, hi))
-  cat("\n\n")
-  cat(kable_out(describe_by_wave(d, s)), sep = "\n")
+```{r}
+quality <- NULL
+for (it in item_names) {
+  for (w in waves) {
+    raw <- d[[it]][d$wave == w]
+    quality <- rbind(quality, data.frame(
+      Item = it, Wave = w,
+      Blank = sum(is.na(raw)),
+      `Special code` = sum(!is.na(raw) & !(raw %in% as.character(lo:hi))),
+      Valid = sum(!is.na(d[[paste0(it, "_r")]][d$wave == w])),
+      check.names = FALSE))
+  }
 }
+show_table(quality)
+```
+
+**Analytic N** (respondents with a valid score) per wave: `r paste0("W", waves, " = ", sapply(waves, function(w) sum(!is.na(d[[score]][d$wave == w]))), collapse = "; ")`.
+
+## Descriptives
+
+### Items (wave `r cs_wave`)
+
+```{r}
+item_desc <- NULL
+for (it in item_names) {
+  v <- dcs[[paste0(it, "_r")]]
+  item_desc <- rbind(item_desc, data.frame(Item = it, n = sum(!is.na(v)),
+                                           Mean = mean(v, na.rm = TRUE), SD = sd(v, na.rm = TRUE)))
+}
+show_table(item_desc)
+```
+
+```{r}
+#| fig-height: !expr 1 + 0.45 * length(item_names)
+#| fig-width: 8
+answers <- NULL
+for (it in item_names) {
+  counts  <- table(factor(dcs[[paste0(it, "_r")]], levels = lo:hi))
+  answers <- rbind(answers, data.frame(Item = it, Answer = names(counts),
+                                       Share = as.vector(counts) / sum(counts)))
+}
+answers$Item <- factor(answers$Item, levels = rev(item_names))
+ggplot(answers, aes(Share, Item, fill = Answer)) +
+  geom_col() +
+  scale_fill_brewer(palette = "RdBu", direction = -1) +
+  scale_x_continuous(labels = function(x) paste0(round(100 * x), "%")) +
+  labs(x = "Share of answers (recoded: higher = more of the construct)", y = NULL, fill = NULL) +
+  theme_minimal(base_size = 11) + theme(legend.position = "bottom") +
+  guides(fill = guide_legend(nrow = 1))
+```
+
+```{r}
+if (length(item_names) > 1) {
+  r <- round(cor(dcs[items_r], use = "pairwise.complete.obs"), 2)
+  r[upper.tri(r)] <- NA
+  show_table(data.frame(Item = item_names, r, check.names = FALSE))
+}
+```
+
+### Score
+
+```{r}
+#| fig-height: 2.6
+#| fig-width: 9
+hist_data <- d[!is.na(d[[score]]), c("wave", score)]
+names(hist_data) <- c("wave", "value")
+hist_data$wave <- paste("Wave", hist_data$wave)
+ggplot(hist_data, aes(value)) +
+  geom_histogram(binwidth = 0.5, boundary = lo, fill = "#4C78A8", colour = "white") +
+  facet_wrap(~ wave, nrow = 1) +
+  labs(x = label, y = "Respondents") +
+  theme_minimal(base_size = 11)
+```
+
+```{r}
+desc <- NULL
+for (w in waves) {
+  v <- d[[score]][d$wave == w]
+  v <- v[!is.na(v)]
+  desc <- rbind(desc, data.frame(Wave = w, n = length(v), Mean = mean(v), SD = sd(v),
+                                 Median = median(v), Skew = psych::skew(v)))
+}
+show_table(desc)
 ```
 
 ## Psychometric evidence
 
-```{r reliability}
-rel <- reliability_table(d, scores)
-if (!is.null(rel)) kable_out(rel) else cat("Single-item measure: internal consistency cannot be estimated (see validity evidence below).")
-```
-
-## Sociodemographic patterns (wave `r cs_wave`)
-
-Groups with fewer than `r MIN_CELL` respondents are suppressed.
-
-```{r groups, results='asis'}
-for (s in primary) {
-  cat("\n\n###", nice[s], "\n\n")
-  for (v in c("gender", "age_group", "education", "east_west")) {
-    cat("\n**By", v, "**\n\n")
-    cat(kable_out(group_means(d, s, v, cs_wave)), sep = "\n")
+```{r}
+if (length(item_names) == 1) {
+  cat("Single-item measure: internal consistency cannot be estimated.",
+      "See the validity and stability evidence elsewhere in this report.")
+} else {
+  sets <- c(setNames(list(item_names), score), subscales)
+  rel  <- NULL
+  for (s in names(sets)) {
+    for (w in waves) {
+      rel <- rbind(rel, data.frame(Score = s, Wave = w, reliability(d[d$wave == w, ], sets[[s]]),
+                                   check.names = FALSE))
+    }
   }
+  show_table(rel)
 }
 ```
 
-## Political and psychological correlates (wave `r cs_wave`)
+## Demographics (wave `r cs_wave`)
 
-```{r correlates, results='asis'}
-others <- list(
-  `Left-right self-placement (general)` = function(x) num_from_label(x$ideology),
-  `Left-right (social issues)`          = function(x) num_from_label(x$ideology_soc),
-  `Left-right (economic issues)`        = function(x) num_from_label(x$ideology_econ),
-  `Household income (1-13)`             = function(x) income_num(x$income),
-  `Age`                                 = function(x) x$age)
-for (o in setdiff(all_scores, primary)) {
-  local({ oo <- o; others[[nice[oo]]] <<- function(x) x[[oo]] })
+Groups with fewer than `r MIN_CELL` respondents are hidden.
+
+```{r}
+demo <- NULL
+for (g in c("gender", "age_group", "education", "income_group", "east_west")) {
+  groups <- group_means(dcs, score, g)
+  if (!is.null(groups)) demo <- rbind(demo, data.frame(Variable = g, groups))
 }
-for (s in primary) {
-  cat("\n\n###", nice[s], "\n\n")
-  tab <- correlates_table(d, s, others, cs_wave)
-  if (is.null(tab)) cat("No correlates available in this wave.\n") else cat(kable_out(tab), sep = "\n")
-}
+show_table(demo)
 ```
 
-## Adjusted analysis (wave `r cs_wave`)
+**Adjusted model.** Linear regression of the score on age (per 10 years), gender, education, household income (1-13) and left-right self-placement. Categories with fewer than `r MIN_CELL` respondents are left out.
 
-Linear regression of the score on age (per 10 years), gender, education, household income and left-right self-placement. Categories with fewer than `r MIN_CELL` respondents are left out of the model. Coefficients are unstandardised (scale points).
-
-```{r adjusted, results='asis'}
-for (s in primary) {
-  am <- tryCatch(adjusted_model(d, s, cs_wave), error = function(e) NULL)
-  cat("\n\n###", nice[s], "\n\n")
-  if (is.null(am)) { cat("Model could not be estimated.\n"); next }
-  cat("n =", am$n, "; R² =", am$r2, "; adjusted R² =", am$adj_r2, "\n\n")
-  cat(kable_out(am$table), sep = "\n")
+```{r}
+md <- dcs
+for (g in c("gender", "education")) {           # leave out very small categories
+  counts <- table(md[[g]])
+  md[[g]][md[[g]] %in% names(counts)[counts < MIN_CELL]] <- NA
 }
+md$age_10 <- md$age / 10
+predictors <- c("age_10", "gender", "education", "income", "ideology")
+predictors <- predictors[sapply(predictors, function(p) length(unique(na.omit(md[[p]]))) > 1)]
+fit <- lm(reformulate(predictors, response = score), data = md)
+ci  <- confint(fit)
+show_table(data.frame(Term = names(coef(fit)), b = coef(fit),
+                      `95% CI` = sprintf("[%.2f, %.2f]", ci[, 1], ci[, 2]),
+                      p = summary(fit)$coefficients[, 4], check.names = FALSE), digits = 3)
+```
+
+n = `r nobs(fit)`; R² = `r round(summary(fit)$r.squared, 2)`; adjusted R² = `r round(summary(fit)$adj.r.squared, 2)`.
+
+## Political behaviour (wave `r cs_wave`)
+
+```{r}
+show_table(rbind(
+  correlation(dcs[[score]], dcs$ideology,      "Left-right self-placement (general)"),
+  correlation(dcs[[score]], dcs$ideology_soc,  "Left-right (social issues)"),
+  correlation(dcs[[score]], dcs$ideology_econ, "Left-right (economic issues)")))
+```
+
+**By vote intention** (grouped categories, see Report 6):
+
+```{r}
+show_table(group_means(dcs, score, "vote_group"))
+```
+
+## Politico-psychological correlates (wave `r cs_wave`)
+
+```{r}
+cors <- NULL
+for (other in setdiff(names(score_names), score)) {
+  cors <- rbind(cors, correlation(dcs[[score]], dcs[[other]], score_names[[other]]))
+}
+cors <- rbind(cors, correlation(dcs[[score]], dcs$income, "Household income (1-13)"),
+                    correlation(dcs[[score]], dcs$age, "Age"))
+show_table(cors)
 ```
 
 ## Longitudinal evidence
 
-```{r longitudinal, results='asis', fig.height=3.2, fig.width=7}
-for (s in primary) {
-  cat("\n\n###", nice[s], "\n\n")
-  if (length(waves_present(d, s)) < 2) { cat("Measured in one wave only.\n"); next }
+```{r}
+#| results: asis
+if (length(waves) < 2) cat("The score exists in one wave only, so there is no longitudinal analysis.")
+```
 
-  cat("\n**Mean level by wave** (all respondents vs. respondents never flagged by an attention check in any wave)\n\n")
-  ok_all  <- mean_ci_by_wave(d, s)
-  flagged <- wide_scores(transform(d, tmp = att_flag_any), "tmp") > 0
-  keep    <- rowSums(flagged, na.rm = TRUE) == 0
-  ok_attn <- mean_ci_by_wave(d, s, keep = keep)
-  print(mean_plot(list(`All respondents` = ok_all, `Never flagged` = ok_attn), nice[s]))
-  cat("\n\n")
+```{r}
+#| eval: !expr length(waves) > 1
+#| fig-height: 3.2
+#| fig-width: 7
+flagged_ids <- unique(d$exercise_id[d$att_flag == 1])
+means <- rbind(cbind(wave_means(d, score), Sample = "All respondents"),
+               cbind(wave_means(d[!d$exercise_id %in% flagged_ids, ], score),
+                     Sample = "Never flagged by an attention check"))
+ggplot(means, aes(Wave, Mean, colour = Sample, group = Sample)) +
+  geom_line(position = position_dodge(.3)) +
+  geom_pointrange(aes(ymin = lo, ymax = hi), position = position_dodge(.3)) +
+  labs(x = NULL, y = paste(label, "(mean, 95% CI)"), colour = NULL) +
+  theme_minimal(base_size = 11) + theme(legend.position = "bottom")
+```
 
-  cat("\n**Paired change** (same respondents; d_z = mean change / SD of change)\n\n")
-  cat(kable_out(change_table(d, s)), sep = "\n")
-
-  cat("\n\n**Rank-order stability** (correlations between waves)\n\n")
-  cat(kable_out(stability_matrix(d, s)), sep = "\n")
-
-  cat("\n\n**Robustness: balanced panel vs. available cases**\n\n")
-  cat(kable_out(balanced_vs_available(d, s)), sep = "\n")
-
-  im <- tryCatch(icc_model(d, s), error = function(e) NULL)
-  if (!is.null(im)) {
-    cat("\n\n**Random-intercept model** (share of variance between persons, and average change per wave)\n\n")
-    cat(kable_out(im), sep = "\n")
-  }
+```{r}
+#| eval: !expr length(waves) > 1
+x <- score_by_wave(d, score)
+pairs <- list()
+for (i in 1:(ncol(x) - 1)) pairs[[i]] <- c(i, i + 1)        # adjacent waves
+if (ncol(x) > 2) pairs[[length(pairs) + 1]] <- c(1, ncol(x)) # first to last wave
+change <- NULL
+for (p in pairs) {
+  diff <- x[[p[2]]] - x[[p[1]]]
+  diff <- diff[!is.na(diff)]
+  ci   <- t.test(diff)$conf.int
+  change <- rbind(change, data.frame(
+    Comparison = paste(names(x)[p[1]], "to", names(x)[p[2]]), n = length(diff),
+    `Mean change` = mean(diff), `95% CI` = sprintf("[%.2f, %.2f]", ci[1], ci[2]),
+    d_z = mean(diff) / sd(diff), check.names = FALSE))
 }
+show_table(change)
+```
+
+**Rank-order stability** (correlation of the score between waves):
+
+```{r}
+#| eval: !expr length(waves) > 1
+stab <- round(cor(x, use = "pairwise.complete.obs"), 2)
+stab[upper.tri(stab)] <- NA
+show_table(data.frame(Wave = names(x), stab, check.names = FALSE))
+```
+
+**Robustness: balanced panel vs. available cases.** Balanced = respondents with a valid score in every wave in which the score exists.
+
+```{r}
+#| eval: !expr length(waves) > 1
+balanced <- complete.cases(x)
+show_table(data.frame(Wave = names(x),
+                      `Available n` = colSums(!is.na(x)), `Available mean` = colMeans(x, na.rm = TRUE),
+                      `Balanced n` = sum(balanced), `Balanced mean` = colMeans(x[balanced, ]),
+                      check.names = FALSE))
+```
+
+**Random-intercept model.** How much of the variation is stable between persons (ICC), and the average change per wave.
+
+```{r}
+#| eval: !expr length(waves) > 1
+ml <- d[!is.na(d[[score]]), c("exercise_id", "wave", score)]
+names(ml)[3] <- "y"
+ml$wave_from_start <- ml$wave - min(ml$wave)
+m  <- lme4::lmer(y ~ wave_from_start + (1 | exercise_id), data = ml)
+vc <- as.data.frame(lme4::VarCorr(m))$vcov
+ci <- confint(m, parm = "wave_from_start", method = "Wald")
+show_table(data.frame(Persons = length(unique(ml$exercise_id)), Observations = nrow(ml),
+                      ICC = vc[1] / sum(vc),
+                      `Change per wave` = lme4::fixef(m)[["wave_from_start"]],
+                      `95% CI` = sprintf("[%.3f, %.3f]", ci[1], ci[2]), check.names = FALSE), digits = 3)
 ```

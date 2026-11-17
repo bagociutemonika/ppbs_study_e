@@ -2,93 +2,209 @@
 title: "Report 6 · Vote intention"
 ---
 
-```{r setup}
+```{r}
 #| include: false
-source("../R/report_functions.R")
-source("../R/vote_functions.R")
-d <- load_processed()
-preds  <- c("rwa", "anomie", "rel_deprivation", "rehabilitation", "attr_societal", "attr_individual")
-labels <- c(rwa = "RWA", anomie = "Anomie", rel_deprivation = "Relative deprivation",
-            rehabilitation = "Support for rehabilitation",
-            attr_societal = "Societal attribution", attr_individual = "Individual attribution")
+source("../R/report_setup.R")
+category_order <- c("CDU/CSU", "SPD", "FDP", "Greens", "Die Linke", "AfD", "Other party",
+                    "Would not vote", "Don't know yet", "No answer", "UNRECOGNISED")
+d$vote <- factor(d$vote, levels = category_order)
 ```
 
 ## What is measured
 
-The "Sunday question": *Which party would you vote for if the election for the German Bundestag were next Sunday?* This is **stated intention**, not observed voting. The extract stores the answers as German text labels; the pipeline maps them to the categories below. All `r length(unique(d$exercise_id))` respondents took part in all five waves; results are unweighted and are **not** estimates of German election results.
+The "Sunday question": *Which party would you vote for if the election for the German Bundestag were next Sunday?* This is **stated intention**, not observed voting. The answers are stored as German text labels and translated in `R/prepare_data.R`. All `r length(unique(d$exercise_id))` respondents took part in all five waves; results are unweighted and are **not** estimates of German election results.
 
-**Change in the answer options.** "I would not vote" and "I don't know yet" were offered only from wave 2. In wave 1, people in these situations had to skip the question or choose a party. This explains the larger number of missing answers in wave 1, and it means wave 1 is not directly comparable with later waves. Switching analyses therefore use waves 2-5.
+**The answer options changed.** "I would not vote" and "I don't know yet" were offered only from wave 2. In wave 1, people in these situations had to skip the question or choose a party. This explains the larger number of missing answers in wave 1, and it means wave 1 is not directly comparable with later waves. Switching analyses therefore use waves 2-5.
 
 ## Categories and frequencies by wave
 
 Cells with fewer than `r MIN_CELL` respondents are shown as "<`r MIN_CELL`".
 
-```{r freq}
-kable_out(vote_freq_table(d))
+```{r}
+counts <- table(d$vote, d$wave)
+shares <- prop.table(counts, 2)
+freq   <- matrix(sprintf("%d (%.1f%%)", counts, 100 * shares), nrow = nrow(counts))
+freq[counts < MIN_CELL] <- paste0("<", MIN_CELL)
+freq[rownames(counts) %in% c("Would not vote", "Don't know yet") & counts[, 1] == 0, 1] <- "not offered"
+freq <- data.frame(Category = rownames(counts), freq)
+names(freq)[-1] <- paste0("W", colnames(counts))
+show_table(freq[rowSums(counts) > 0, ])
 ```
 
-```{r shares, fig.height=3.5, fig.width=7}
-vote_share_plot(d)
+```{r}
+#| fig-height: 3.5
+#| fig-width: 7
+valid  <- d[!is.na(d$vote_group), ]
+shares <- as.data.frame(prop.table(table(Wave = valid$wave, Group = valid$vote_group), 1))
+shares$Wave <- paste0("W", shares$Wave)
+ggplot(shares, aes(Wave, Freq, colour = Group, group = Group)) +
+  geom_line() + geom_point() +
+  scale_y_continuous(labels = function(x) paste0(round(100 * x), "%")) +
+  labs(x = NULL, y = "Share of valid answers", colour = NULL) +
+  theme_minimal(base_size = 11) + theme(legend.position = "bottom")
 ```
 
-**Not identifiable in this extract:** "Other party" rises in later waves. This may reflect new parties (for example BSW, founded in 2024), but the extract contains no open-text answers, so this cannot be checked.
+**Not identifiable in this extract:** "Other party" grows in later waves. This may reflect new parties (for example BSW, founded in 2024), but the extract has no open-text answers, so this cannot be checked.
 
 ## Switching between waves
 
-For the switching tables, parties are grouped to avoid very small cells: FDP, Die Linke and "other party" form **Other parties**; "would not vote" and "don't know yet" form **Undecided / non-voter**. Respondents with no answer in either wave are left out of that comparison.
+For switching, parties are grouped to avoid very small cells: FDP, Die Linke and "other party" form **Other parties**; "would not vote" and "don't know yet" form **Undecided / non-voter**. Respondents without an answer in one of the two waves are left out of that comparison.
 
-**Summary of switching patterns** (adjacent waves, same respondents):
+```{r}
+# vote group of the same respondents in two waves
+vote_pair <- function(w1, w2) {
+  a <- d[d$wave == w1, c("exercise_id", "vote_group")]
+  b <- d[d$wave == w2, c("exercise_id", "vote_group")]
+  m <- merge(a, b, by = "exercise_id")
+  names(m) <- c("id", "from", "to")
+  m[!is.na(m$from) & !is.na(m$to), ]
+}
 
-```{r switch-summary}
-kable_out(switching_summary(d, list(c(2, 3), c(3, 4), c(4, 5))))
+switch_pattern <- function(from, to) {
+  undecided <- "Undecided / non-voter"
+  ifelse(from == undecided & to == undecided, "Stayed undecided / non-voter",
+  ifelse(from == undecided,                   "Undecided / non-voter to a party",
+  ifelse(to == undecided,                     "Party to undecided / non-voter",
+  ifelse(from == to,                          "Same party",
+                                              "Switched to another party"))))
+}
+
+transition_table <- function(w1, w2) {
+  p   <- vote_pair(w1, w2)
+  tab <- table(p$from, p$to)
+  out <- matrix(ifelse(tab < MIN_CELL, paste0("<", MIN_CELL), tab), nrow = nrow(tab))
+  out <- data.frame(rownames(tab), out)
+  names(out) <- c("From (rows) / to (columns)", colnames(tab))
+  out
+}
 ```
 
-**Full transition tables** (rows = earlier wave, columns = later wave):
+**Summary of switching patterns** (same respondents, adjacent waves):
 
-```{r transitions, results='asis'}
-for (p in list(c(2, 3), c(3, 4), c(4, 5))) {
-  cat("\n\n**Wave", p[1], "to wave", p[2], "**\n\n")
-  cat(kable_out(transition_table(d, p[1], p[2])), sep = "\n")
+```{r}
+patterns <- c("Same party", "Switched to another party", "Party to undecided / non-voter",
+              "Undecided / non-voter to a party", "Stayed undecided / non-voter")
+summary_table <- data.frame(Pattern = patterns)
+for (w in 2:4) {
+  p <- vote_pair(w, w + 1)
+  n <- as.vector(table(factor(switch_pattern(as.character(p$from), as.character(p$to)), levels = patterns)))
+  summary_table[[paste0("W", w, " to W", w + 1)]] <-
+    ifelse(n < MIN_CELL, paste0("<", MIN_CELL), sprintf("%d (%.1f%%)", n, 100 * n / nrow(p)))
 }
+show_table(summary_table)
+```
+
+**Wave 2 to wave 3:**
+
+```{r}
+show_table(transition_table(2, 3))
+```
+
+**Wave 3 to wave 4:**
+
+```{r}
+show_table(transition_table(3, 4))
+```
+
+**Wave 4 to wave 5:**
+
+```{r}
+show_table(transition_table(4, 5))
 ```
 
 ## Vote intention and the assigned constructs
 
-**Design.** To avoid using a later measure to explain an earlier answer, the construct scores come from an **earlier wave** than the vote: scores in wave 4 predict vote intention in wave 5. The same model is repeated with wave 3 scores and wave 4 vote as a replication. Support for rehabilitation exists only from wave 3, which is why wave 3 is the earliest possible starting point.
+**Design.** A later measure should never explain an earlier answer, so the construct scores come from an **earlier wave** than the vote: scores in wave 4 predict vote intention in wave 5. The same model is repeated with wave 3 scores and wave 4 vote as a replication. Support for rehabilitation exists only from wave 3, so wave 3 is the earliest possible start.
 
-**Model.** Multinomial logistic regression with the six grouped vote categories as outcome and all six construct scores (standardised within wave) as predictors. To make the results readable, the table shows how the **average predicted probability** of each category changes when one score moves from 1 SD below to 1 SD above the mean, holding the other scores at their observed values. 95% intervals from 300 bootstrap samples. These are associations in a non-random panel, not causal effects.
+**Model.** Multinomial logistic regression: the six grouped vote categories are the outcome, and all six construct scores (standardised) are the predictors. To make the result readable, the figure shows how the **average predicted probability** of each category changes when one score moves from 1 SD below to 1 SD above the mean, with the other scores kept at their observed values. The 95% intervals come from 300 bootstrap samples. These are associations in a non-random panel, not causal effects.
 
-```{r model-main}
-#| cache: false
-eff45 <- vote_effects(d, 4, 5, preds, labels)
-eff34 <- vote_effects(d, 3, 4, preds, labels)
+```{r}
+predictors <- c("rwa", "anomie", "rel_deprivation", "rehabilitation", "attr_societal", "attr_individual")
+
+# scores in wave w_in, vote group in wave w_out, same respondents
+model_data <- function(w_in, w_out) {
+  x <- d[d$wave == w_in,  c("exercise_id", predictors)]
+  y <- d[d$wave == w_out, c("exercise_id", "vote_group")]
+  m <- merge(x, y, by = "exercise_id")
+  m <- m[complete.cases(m), ]
+  m[predictors] <- scale(m[predictors])
+  m$vote_group <- droplevels(m$vote_group)
+  m
+}
+
+# change in predicted probability, -1 SD to +1 SD, for every predictor
+probability_change <- function(m) {
+  fit <- nnet::multinom(vote_group ~ ., data = m[c("vote_group", predictors)], trace = FALSE)
+  out <- NULL
+  for (p in predictors) {
+    low  <- m; low[[p]]  <- -1
+    high <- m; high[[p]] <-  1
+    change <- colMeans(predict(fit, high, type = "probs")) - colMeans(predict(fit, low, type = "probs"))
+    out <- rbind(out, data.frame(Predictor = score_names[[p]], Category = names(change), Change = change))
+  }
+  out
+}
+
+with_bootstrap <- function(m, reps = 300) {
+  set.seed(2026)
+  result <- probability_change(m)
+  boot <- replicate(reps, {
+    b <- tryCatch(probability_change(m[sample(nrow(m), replace = TRUE), ])$Change,
+                  error = function(e) NULL)
+    if (length(b) == nrow(result)) b else rep(NA, nrow(result))
+  })
+  result$lo <- apply(boot, 1, quantile, 0.025, na.rm = TRUE)
+  result$hi <- apply(boot, 1, quantile, 0.975, na.rm = TRUE)
+  result
+}
+
+effect_plot <- function(result) {
+  ggplot(result, aes(100 * Change, Predictor)) +
+    geom_vline(xintercept = 0, colour = "grey60") +
+    geom_pointrange(aes(xmin = 100 * lo, xmax = 100 * hi), size = .3) +
+    facet_wrap(~ Category, nrow = 2) +
+    labs(x = "Change in predicted probability, -1 SD to +1 SD (percentage points)", y = NULL) +
+    theme_minimal(base_size = 10)
+}
+
+m45 <- model_data(4, 5)
+m34 <- model_data(3, 4)
+r45 <- with_bootstrap(m45)
+r34 <- with_bootstrap(m34)
 ```
 
 ### Main model: scores in wave 4, vote intention in wave 5
 
-Analytic n = `r eff45$n`. Respondents per category: `r paste(names(eff45$counts), eff45$counts, sep = " ", collapse = "; ")`.
+Analytic n = `r nrow(m45)`. Respondents per category: `r paste(names(table(m45$vote_group)), table(m45$vote_group), collapse = "; ")`.
 
-```{r plot45, fig.height=5.5, fig.width=9}
-effects_plot(eff45)
+```{r}
+#| fig-height: 5.5
+#| fig-width: 9
+effect_plot(r45)
 ```
 
-```{r tab45}
-kable_out(effects_table(eff45))
+```{r}
+show_table(data.frame(Predictor = r45$Predictor, Category = r45$Category,
+                      `Change (percentage points)` = 100 * r45$Change,
+                      `95% CI` = sprintf("[%.1f, %.1f]", 100 * r45$lo, 100 * r45$hi),
+                      check.names = FALSE), digits = 1)
 ```
 
 ### Replication: scores in wave 3, vote intention in wave 4
 
-Analytic n = `r eff34$n`.
+Analytic n = `r nrow(m34)`.
 
-```{r plot34, fig.height=5.5, fig.width=9}
-effects_plot(eff34)
+```{r}
+#| fig-height: 5.5
+#| fig-width: 9
+effect_plot(r34)
 ```
 
 ## Interpretation and limits
 
-*TODO (Monika): 3-5 sentences, written after reading the results above. Which constructs are associated with which party choice, does the replication agree, and what can and cannot be concluded?*
+*TODO (Monika): 3-5 sentences, written after reading the results above. Which constructs go with which party choice, does the replication agree, and what can and cannot be concluded?*
 
 - Stated intention, not behaviour; an unweighted panel of people who stayed for five waves.
-- Wave 1 has different answer options and is used only descriptively.
-- Party groups combine parties with different profiles (for example FDP and Die Linke) to keep cells large enough; this hides differences within the group.
-- Predictors are measured one wave earlier, but this does not establish causality: stable traits and earlier vote intention may explain both.
+- Wave 1 had different answer options and is used only descriptively.
+- The party groups combine parties with different profiles (for example FDP and Die Linke) to keep cells large enough; this hides differences inside a group.
+- The scores are measured one wave before the vote, but this does not make the association causal: stable traits and earlier vote intention may explain both.
