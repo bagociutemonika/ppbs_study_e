@@ -13,8 +13,6 @@ Public site (aggregate results only): https://ppbsemb.netlify.app
 2. Install the package versions used here: `renv::restore()`
 3. Run: `source("run.R")` in RStudio (or `Rscript run.R` in a terminal).
 
-Nothing in the code assumes 500 respondents; it runs on the full dataset as long as the
-column names are the same.
 
 ## How the project is organised
 
