@@ -1,5 +1,5 @@
 ---
-title: "Report 1 · Right-wing authoritarianism"
+title: "Report 1  Right-wing authoritarianism"
 ---
 
 ```{r}
@@ -17,7 +17,7 @@ lo <- 1; hi <- 7
 
 ## Construct-specific checks
 
-The KSA-3 scale (Beierlein et al., 2014) has three facets with three items each: aggression, submission and conventionalism. The table compares one factor with three factors in every wave.
+The KSA-3 scale has three facets with three items each: aggression, submission and conventionalism. The table compares one factor with three factors in every wave.
 
 ```{r}
 fits <- NULL
@@ -33,9 +33,4 @@ show_table(fits, digits = 3)
 show_table(efa(d[d$wave == 1, ], item_names, 3)$loadings)
 ```
 
-## Interpretation and limits
 
-*TODO (Monika): 3-5 sentences, written after reading the results above.*
-
-- All nine items were asked with the same wording and answer scale in waves 1-5, so mean-level and rank-order comparisons across waves are supported.
-- No item is reverse-worded; all inter-item correlations are positive in every wave.

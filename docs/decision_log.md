@@ -1,6 +1,6 @@
 # Decision log
 
-DRAFT: check every entry and correct anything that is not right.
+
 
 | # | Topic | Decision | Alternatives considered | Reason / evidence | Status |
 |---|---|---|---|---|---|
@@ -27,8 +27,4 @@ DRAFT: check every entry and correct anything that is not right.
 | 21 | Public site | Only `site/_site` published (Netlify Drop), after `check_public_site.R`; live site checked after deployment | GitHub Pages | Private repository; only reviewed aggregate files leave the computer | Done |
 | 22 | Local storage | On receipt the files were in an employer-synced OneDrive folder; moved to unsynced local storage on 16 Nov and removed from the OneDrive recycle bin | - | The brief requires the data to stay local | Done |
 
-## Open questions for PPBS
 
-1. Are anomie items 4-5 already reverse-scored in the extract? (entry 7)
-2. Was "not able to answer" for rehabilitation stored as blank in wave 3? (entry 11)
-3. What do the `att*_flag` variables mean? (entry 13)

@@ -1,28 +1,22 @@
 ---
-title: "Study E · reproducible construct reports"
+title: "Study E  reproducible construct reports"
 subtitle: "PPBS practical exercise · Monika Bagočiūtė"
 ---
 
-::: {.callout-note}
-**Progress update (Tuesday 17 November, 13:00).** This site is work in progress; the status of each part is listed below. The final version follows by Thursday 19 November, 09:00.
-:::
 
 ## How I would work at PPBS
 
-*TODO (Monika), in my own words. Planned structure:*
-
-1. **Why this work interests me**: ...
-2. **What I would bring**: ...
-3. **One concrete improvement, already started here: a machine-readable item specification.** ...
-4. **Decisions I would make myself, and decisions I would bring to a research lead.** ...
-5. **Tools I can use immediately:** R, Quarto, Git/GitHub, renv, psych, lme4, ggplot2, ...
+1. **Why this work interests me:** This position would allow me to develop my skills in managing research reproducibly. I would like to pursue a career in research.
+2. **What I would bring:** I have extensive methodological training in the social sciences, and I am organised by nature.
+3. **One concrete improvement:** I did not manage to complete it for this version, but the analysis I planned is a test of measurement invariance across groups (sex, age) and over time.
+4. **Tools I can use immediately:** R, Quarto, Git/GitHub, renv, psych, lme4, ggplot2, ...
 
 ## Status
 
 | Part | Status |
 |---|---|
-| Data preparation (item rules, recoding, scores, checks) | Done |
-| Reports 1-6 | Draft: results complete, interpretation to be written |
+| Data preparation (item rules, recoding, scores, checks) | Done (need to double-check)|
+| Reports 1-6 | Draft: results complete, interpretation is missing |
 | Decision log, AI disclosure, handover and deletion plan | Draft |
 
 ## Key data decisions
@@ -31,7 +25,7 @@ subtitle: "PPBS practical exercise · Monika Bagočiūtė"
 - **Item rules in one table** (`spec/item_spec.csv`): wording, waves, range, reversal and special codes. The scripts read the rules from this table.
 - **Anomie items 4-5 are already reverse-scored in the extract.** Reversing them as the guide suggests produced negative correlations with the other items, so they are not reversed again (to confirm with PPBS).
 - **Relative deprivation** is one item, reversed so that higher means more deprived; it correlates with household income at ρ ≈ -.63.
-- **Rehabilitation:** "not able to answer" is coded 97 in waves 4-5 but stored as blank in wave 3; both count as missing and are reported.
+- **Rehabilitation:** "not able to answer" is coded 97 in waves 4-5 but stored as blank in wave 3.
 - **Causal attribution:** two separate scores (societal, individual) instead of one, based on factor analysis; items 2 and 3 left out.
 - **Vote intention:** wave 1 had no "don't know" or "would not vote" option, so switching uses waves 2-5; models use construct scores from the wave *before* the vote.
 - **Sample:** all 500 respondents took part in all five waves; results describe this panel, not the population.

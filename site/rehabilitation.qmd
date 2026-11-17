@@ -1,5 +1,5 @@
 ---
-title: "Report 4 · Support for rehabilitation"
+title: "Report 4 Support for rehabilitation"
 ---
 
 ```{r}
@@ -21,6 +21,4 @@ lo <- 1; hi <- 7
 
 **Measurement limit.** Three study-specific items without earlier validation; three items cover the construct only narrowly.
 
-## Interpretation and limits
 
-*TODO (Monika): 3-5 sentences, written after reading the results above.*

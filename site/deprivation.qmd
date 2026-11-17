@@ -1,5 +1,5 @@
 ---
-title: "Report 3 · Relative deprivation"
+title: "Report 3  Relative deprivation"
 ---
 
 ```{r}
@@ -15,7 +15,7 @@ lo <- 1; hi <- 7
 
 ## Construct-specific checks
 
-**Measurement limit: one item.** Personal relative deprivation is measured with one question ("How would you rate your own financial situation compared to other Germans?"), so internal consistency cannot be estimated. The original answers run from 1 = much worse to 7 = much better off; the pipeline reverses them so that higher values mean *more* deprivation.
+**Measurement limit: one item.** Personal relative deprivation is measured with one question, so internal consistency cannot be estimated. .
 
 **Validity check.** If the item and its reversal are right, deprivation should go with lower household income:
 
@@ -32,10 +32,8 @@ for (w in 1:5) {
 show_table(rho)
 ```
 
-**Stability** between waves (see the rank-order stability table above) is the reliability evidence for a single item.
+**Stability**  is the reliability evidence for a single item.
 
-**Not included:** `deprivation_offender` asks how the government treats offenders compared with the general population. It is a different construct and is not part of this score.
 
-## Interpretation and limits
 
-*TODO (Monika): 3-5 sentences, written after reading the results above.*
+

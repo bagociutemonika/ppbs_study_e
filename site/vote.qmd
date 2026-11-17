@@ -1,5 +1,5 @@
 ---
-title: "Report 6 · Vote intention"
+title: "Report 6  Vote intention"
 ---
 
 ```{r}
@@ -12,9 +12,8 @@ d$vote <- factor(d$vote, levels = category_order)
 
 ## What is measured
 
-The "Sunday question": *Which party would you vote for if the election for the German Bundestag were next Sunday?* This is **stated intention**, not observed voting. The answers are stored as German text labels and translated in `R/prepare_data.R`. All `r length(unique(d$exercise_id))` respondents took part in all five waves; results are unweighted and are **not** estimates of German election results.
+The "Sunday question": *Which party would you vote for if the election for the German Bundestag were next Sunday?* The answers are stored as German text labels and translated in `R/prepare_data.R`. All `r length(unique(d$exercise_id))` respondents took part in all five waves; results are unweighted. 
 
-**The answer options changed.** "I would not vote" and "I don't know yet" were offered only from wave 2. In wave 1, people in these situations had to skip the question or choose a party. This explains the larger number of missing answers in wave 1, and it means wave 1 is not directly comparable with later waves. Switching analyses therefore use waves 2-5.
 
 ## Categories and frequencies by wave
 
@@ -44,7 +43,6 @@ ggplot(shares, aes(Wave, Freq, colour = Group, group = Group)) +
   theme_minimal(base_size = 11) + theme(legend.position = "bottom")
 ```
 
-**Not identifiable in this extract:** "Other party" grows in later waves. This may reflect new parties (for example BSW, founded in 2024), but the extract has no open-text answers, so this cannot be checked.
 
 ## Switching between waves
 
@@ -114,9 +112,8 @@ show_table(transition_table(4, 5))
 
 ## Vote intention and the assigned constructs
 
-**Design.** A later measure should never explain an earlier answer, so the construct scores come from an **earlier wave** than the vote: scores in wave 4 predict vote intention in wave 5. The same model is repeated with wave 3 scores and wave 4 vote as a replication. Support for rehabilitation exists only from wave 3, so wave 3 is the earliest possible start.
 
-**Model.** Multinomial logistic regression: the six grouped vote categories are the outcome, and all six construct scores (standardised) are the predictors. To make the result readable, the figure shows how the **average predicted probability** of each category changes when one score moves from 1 SD below to 1 SD above the mean, with the other scores kept at their observed values. The 95% intervals come from 300 bootstrap samples. These are associations in a non-random panel, not causal effects.
+**Model.** Multinomial logistic regression: the six grouped vote categories are the outcome, and all six construct scores (standardised) are the predictors. To make the result readable, the figure shows how the **average predicted probability** of each category changes when one score moves from 1 SD below to 1 SD above the mean, with the other scores kept at their observed values. The 95% intervals come from 300 bootstrap samples. 
 
 ```{r}
 predictors <- c("rwa", "anomie", "rel_deprivation", "rehabilitation", "attr_societal", "attr_individual")
@@ -200,11 +197,3 @@ Analytic n = `r nrow(m34)`.
 effect_plot(r34)
 ```
 
-## Interpretation and limits
-
-*TODO (Monika): 3-5 sentences, written after reading the results above. Which constructs go with which party choice, does the replication agree, and what can and cannot be concluded?*
-
-- Stated intention, not behaviour; an unweighted panel of people who stayed for five waves.
-- Wave 1 had different answer options and is used only descriptively.
-- The party groups combine parties with different profiles (for example FDP and Die Linke) to keep cells large enough; this hides differences inside a group.
-- The scores are measured one wave before the vote, but this does not make the association causal: stable traits and earlier vote intention may explain both.

@@ -3,23 +3,23 @@ project:
   output-dir: _site
 
 website:
-  title: "Study E · construct reports"
+  title: "Study E"
   navbar:
     left:
       - href: index.qmd
         text: Overview
       - href: rwa.qmd
-        text: "1 · Authoritarianism"
+        text: "Authoritarianism"
       - href: anomie.qmd
-        text: "2 · Anomie"
+        text: "Anomie"
       - href: deprivation.qmd
-        text: "3 · Relative deprivation"
+        text: "Relative deprivation"
       - href: rehabilitation.qmd
-        text: "4 · Rehabilitation"
+        text: "Rehabilitation"
       - href: attribution.qmd
-        text: "5 · Causal attribution"
+        text: "Causal attribution"
       - href: vote.qmd
-        text: "6 · Vote intention"
+        text: "Vote intention"
 
 format:
   html:

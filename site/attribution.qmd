@@ -1,5 +1,5 @@
 ---
-title: "Report 5 · Causal attribution of crime"
+title: "Report 5  Causal attribution of crime"
 ---
 
 ```{r}
@@ -8,7 +8,7 @@ source("../R/report_setup.R")
 all_items <- paste0("attribution_", 1:9)
 ```
 
-The nine items (Carroll et al., 1987) contain two kinds of explanation for crime: **circumstances** (family problems, poverty, flaws in society, situations) and **the person** (laziness, deliberate choice, disregard for others). They are reported as **two separate scores**; the reasons are in the last section.
+Most of the nine items describe one of two kinds of explanation for crime: **circumstances** (family problems, poverty, flaws in society, situations) or **the person** (laziness, deliberate choice, disregard for others). Items 2 (drugs) and 3 (learning from criminals) fit neither clearly. The brief and the item guide treat the nine items as one set; I report **two separate scores**, for the reasons shown in the last section. This split is data-driven and should be treated as exploratory.
 
 # Societal attribution
 
@@ -34,9 +34,32 @@ item_names <- paste0("attribution_", 7:9)
 
 # Why two scores
 
-**Direction check.** Across the nine items there are 9-12 negative inter-item correlations in every wave, so one average of all nine would mix opposite explanations.
+**Direction check.** If all nine items measured one thing, they would all correlate positively. The table shows how many of the 36 item pairs correlate negatively in each wave:
 
-**Structure.** An exploratory factor analysis in wave 1 gave two factors that are almost uncorrelated, so respondents can endorse both kinds of explanation at once. Items 2 (drugs) and 3 (learning from criminals) were left out because they load on both factors or fit neither clearly. The structure was found in wave 1 and is checked in waves 2-5 here:
+```{r}
+neg <- NULL
+for (w in 1:5) {
+  r <- cor(d[d$wave == w, paste0(all_items, "_r")], use = "pairwise.complete.obs")
+  r <- r[lower.tri(r)]
+  neg <- rbind(neg, data.frame(Wave = w, `Item pairs` = length(r),
+                               `Negative correlations` = sum(r < 0),
+                               `Lowest r` = min(r), check.names = FALSE))
+}
+show_table(neg)
+```
+
+**Item correlations in wave 1:**
+
+```{r}
+r1 <- round(cor(d[d$wave == 1, paste0(all_items, "_r")], use = "pairwise.complete.obs"), 2)
+r1[upper.tri(r1)] <- NA
+colnames(r1) <- all_items
+show_table(data.frame(Item = all_items, r1, check.names = FALSE))
+```
+
+Items within each group correlate positively: societal (1, 4, 5, 6) and individual (7, 8, 9). 
+
+**Structure.** An exploratory factor analysis with two factors, in every wave:
 
 ```{r}
 fits <- NULL
@@ -44,7 +67,9 @@ for (w in 1:5) fits <- rbind(fits, cbind(Wave = w, efa(d[d$wave == w, ], all_ite
 show_table(fits, digits = 3)
 ```
 
-**Loadings in wave 1** (two factors; below .30 hidden):
+The two-factor structure was found in wave 1 and is checked in waves 2-5. The fit is acceptable in waves 1-3 but weaker in waves 4-5.
+
+**Loadings in wave 1** :
 
 ```{r}
 show_table(efa(d[d$wave == 1, ], all_items, 2)$loadings)
@@ -55,6 +80,8 @@ show_table(efa(d[d$wave == 1, ], all_items, 2)$loadings)
 ```{r}
 show_table(efa(d[d$wave == 5, ], all_items, 2)$loadings)
 ```
+
+
 
 **Correlation between the two scores:**
 
@@ -67,8 +94,9 @@ for (w in 1:5) {
 show_table(cors)
 ```
 
-# Interpretation and limits
+The two scores are weakly negatively related
 
-*TODO (Monika): 3-5 sentences, written after reading the results above.*
 
-- Still to add as robustness: the individual score with item 2 included.
+
+
+
