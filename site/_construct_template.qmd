@@ -26,7 +26,7 @@ show_table(data.frame(Item = item_names, Wording = item_table$wording,
                       check.names = FALSE))
 ```
 
-**Score.** The mean of the recoded items (range `r lo`-`r hi`, higher = more of the construct), computed when at least two thirds of the items were answered. Special codes (for example 97 "not able to answer") count as missing.
+**Score.** The mean of the recoded items (range `r lo`-`r hi`, higher = more of the construct), computed only when all items were answered (no proration; Mazza, Enders & Ruehlman, 2015). Special codes (for example 97 "not able to answer") count as missing.
 
 ## Data quality
 
